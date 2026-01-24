@@ -1,0 +1,38 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "build": "echo 'No build step required for Node.js backend'",
+    "server": "nodemon server.js",
+    "add-whatsapp-recipient": "node scripts/addWhatsAppRecipient.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@mistralai/mistralai": "^1.10.0",
+    "axios": "^1.13.2",
+    "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.3.0",
+    "cors": "^2.8.5",
+    "csv-parser": "^3.0.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.18.0",
+    "mongoose": "^8.5.1",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^7.0.11",
+    "nodemon": "^3.1.4",
+    "openai": "^6.9.1",
+    "razorpay": "^2.9.4",
+    "stripe": "^16.5.0",
+    "validator": "^13.12.0",
+    "ws": "^8.19.0",
+    "xlsx": "^0.18.5"
+  }
+}

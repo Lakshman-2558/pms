@@ -12,25 +12,28 @@ const AppContextProvider = (props) => {
     const currencySymbol = '₹'
     // Dynamically determine backend URL based on current host
     const getBackendUrl = () => {
-        const hostname = window.location.hostname
-        const isNetworkAccess = hostname !== 'localhost' && hostname !== '127.0.0.1'
-        
-        // If accessing from network IP, always use network IP for backend (ignore .env localhost)
-        if (isNetworkAccess) {
-            const backendUrl = `http://${hostname}:4000`
-            // Removed console.log for cleaner production output
-            return backendUrl
-        }
-        
-        // For localhost access, check .env first, then default to localhost
+        // PRIORITY 1: Always check environment variable first (for production deployments)
         const envUrl = import.meta.env.VITE_BACKEND_URL
         if (envUrl) {
-            // Removed console.log for cleaner production output
+            console.log('🌐 Using backend URL from environment:', envUrl)
             return envUrl
         }
-        
+
+        // PRIORITY 2: For local development, check if accessing from network IP
+        const hostname = window.location.hostname
+        const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1'
+        const isLocalNetworkIP = /^192\.168\.|^10\.|^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
+
+        // If accessing from local network IP (e.g., 192.168.x.x), use that IP for backend
+        if (isLocalNetworkIP) {
+            const backendUrl = `http://${hostname}:4000`
+            console.log('🏠 Using local network backend:', backendUrl)
+            return backendUrl
+        }
+
+        // PRIORITY 3: Default to localhost for local development
         const backendUrl = 'http://localhost:4000'
-        // Removed console.log for cleaner production output
+        console.log('💻 Using default localhost backend:', backendUrl)
         return backendUrl
     }
     const backendUrl = getBackendUrl()
@@ -80,8 +83,8 @@ const AppContextProvider = (props) => {
                     ...doc,
                     image: fixDoctorImage(doc),
                     // Ensure available property exists (default to true if not set)
-                    available: doc.available !== undefined && doc.available !== null 
-                        ? (doc.available === true || doc.available === 'true') 
+                    available: doc.available !== undefined && doc.available !== null
+                        ? (doc.available === true || doc.available === 'true')
                         : true
                 }))
             } else {
@@ -103,8 +106,8 @@ const AppContextProvider = (props) => {
                         degree: doc.qualification,
                         about: doc.about || `Dr. ${doc.name} is a specialist in ${doc.specialization} at ${doc.hospitalName}.`,
                         // Ensure available property exists (default to true if not set)
-                        available: doc.available !== undefined && doc.available !== null 
-                            ? (doc.available === true || doc.available === 'true') 
+                        available: doc.available !== undefined && doc.available !== null
+                            ? (doc.available === true || doc.available === 'true')
                             : true
                     }
                 })
@@ -123,13 +126,13 @@ const AppContextProvider = (props) => {
                     } else {
                         // If duplicate _id found (shouldn't happen, but handle it), prefer the one with a custom image
                         const existing = doctorsMap.get(uniqueKey)
-                        const currentHasCustomImage = doc.image && 
-                            !doc.image.includes('ui-avatars.com') && 
+                        const currentHasCustomImage = doc.image &&
+                            !doc.image.includes('ui-avatars.com') &&
                             !doc.image.includes('data:image/png;base64')
-                        const existingHasCustomImage = existing.image && 
-                            !existing.image.includes('ui-avatars.com') && 
+                        const existingHasCustomImage = existing.image &&
+                            !existing.image.includes('ui-avatars.com') &&
                             !existing.image.includes('data:image/png;base64')
-                        
+
                         if (currentHasCustomImage && !existingHasCustomImage) {
                             doctorsMap.set(uniqueKey, doc) // Replace with the one that has custom image
                         }

@@ -432,43 +432,43 @@ Create a `.env` file in the `backend/` directory:
 ```env
 # Database
 # For MongoDB Atlas (Cloud):
-# MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database
+# MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/<database>
 # For Local MongoDB Compass:
 MONGODB_URI=mongodb://localhost:27017/healthsystem
 
 # Server
 PORT=4000
-JWT_SECRET=your_jwt_secret_key
+JWT_SECRET=<generate_a_strong_random_secret_key>
 
 # Currency
 CURRENCY=INR
 
 # Admin Credentials
-ADMIN_EMAIL=admin@example.com
-ADMIN_PASSWORD=your_admin_password
+ADMIN_EMAIL=<your_admin_email>
+ADMIN_PASSWORD=<your_secure_admin_password>
 
 # Cloudinary (Image Storage)
-CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
-CLOUDINARY_API_KEY=your_cloudinary_api_key
-CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+CLOUDINARY_CLOUD_NAME=<your_cloudinary_cloud_name>
+CLOUDINARY_API_KEY=<your_cloudinary_api_key>
+CLOUDINARY_API_SECRET=<your_cloudinary_api_secret>
 
 # Payment Gateways
-RAZORPAY_KEY_ID=your_razorpay_key_id
-RAZORPAY_KEY_SECRET=your_razorpay_key_secret
-STRIPE_SECRET_KEY=your_stripe_secret_key
+RAZORPAY_KEY_ID=<your_razorpay_key_id>
+RAZORPAY_KEY_SECRET=<your_razorpay_key_secret>
+STRIPE_SECRET_KEY=<your_stripe_secret_key>
 
 # Email Service (Brevo/Sendinblue)
-BREVO_API_KEY=your_brevo_api_key
-BREVO_SENDER_EMAIL=your_sender_email
+BREVO_API_KEY=<your_brevo_api_key>
+BREVO_SENDER_EMAIL=<your_sender_email>
 
 # SMS Service (Twilio - Optional)
-TWILIO_ACCOUNT_SID=your_twilio_account_sid
-TWILIO_AUTH_TOKEN=your_twilio_auth_token
-TWILIO_PHONE_NUMBER=your_twilio_phone_number
+TWILIO_ACCOUNT_SID=<your_twilio_account_sid>
+TWILIO_AUTH_TOKEN=<your_twilio_auth_token>
+TWILIO_PHONE_NUMBER=<your_twilio_phone_number>
 
 # WhatsApp Service (Optional)
-WHATSAPP_API_KEY=your_whatsapp_api_key
-WHATSAPP_PHONE_NUMBER_ID=your_whatsapp_phone_number_id
+WHATSAPP_API_KEY=<your_whatsapp_api_key>
+WHATSAPP_PHONE_NUMBER_ID=<your_whatsapp_phone_number_id>
 ```
 
 #### Frontend (.env)
@@ -561,11 +561,11 @@ Admin accounts are **not stored in the database**. They are authenticated using 
    
    Open your `backend/.env` file and set the following variables:
    ```env
-   ADMIN_EMAIL=admin@example.com
-   ADMIN_PASSWORD=your_secure_password_here
+   ADMIN_EMAIL=<your_admin_email>
+   ADMIN_PASSWORD=<your_secure_password>
    ```
    
-   Replace `admin@example.com` with your desired admin email and `your_secure_password_here` with a strong password.
+   Replace `<your_admin_email>` with your desired admin email and `<your_secure_password>` with a strong password.
 
 2. **Login to Admin Panel**
    

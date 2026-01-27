@@ -16,6 +16,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy'
 import DataSecurity from './pages/DataSecurity'
 import Careers from './pages/Careers'
 import ScrollToTop from './components/ScrollToTop'
+import BackToTopButton from './components/BackToTopButton'
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Verify from './pages/Verify'
@@ -34,7 +35,7 @@ const App = () => {
       <ToastContainer
         position="top-center"
         autoClose={3000}
-        hideProgressBar={false}
+        hideProgressBar={true}
         newestOnTop={false}
         closeOnClick={true}
         rtl={false}
@@ -49,6 +50,7 @@ const App = () => {
       <div className='relative' style={{ zIndex: 999999999 }}>
         <Navbar />
       </div>
+      <ScrollToTop />
       {/* Main content - lower z-index than navbar, with top padding for fixed navbar */}
       <main className='relative z-[1] flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16'>
         <Routes>
@@ -79,7 +81,7 @@ const App = () => {
       {/* Footer */}
       <Footer />
       {/* Scroll to Top Button - Available on all pages */}
-      <ScrollToTop />
+      <BackToTopButton />
     </div>
   )
 }

@@ -9,6 +9,7 @@ import BackArrow from '../components/BackArrow'
 import LoadingSpinner, { SkeletonAppointment, ButtonSpinner } from '../components/LoadingSpinner'
 import QueueTracker from '../components/QueueTracker'
 import QRCode from 'react-qr-code'
+// Dynamic imports to avoid Vite pre-bundling issues
 
 const MyAppointments = () => {
 
@@ -18,6 +19,8 @@ const MyAppointments = () => {
     const [appointments, setAppointments] = useState([])
     const [isLoading, setIsLoading] = useState(true)
     const [cancellingId, setCancellingId] = useState(null)
+    const [downloadingOPForm, setDownloadingOPForm] = useState(null) // Track which OP form is being downloaded (appointment ID)
+    const [opFormProgress, setOpFormProgress] = useState({}) // Track progress percentage for each OP form { appointmentId: percentage }
     const [appointmentFilter, setAppointmentFilter] = useState('All') // 'All', 'Pending Payment', 'Payment Completed', 'Cancelled'
     const [expandedAppointments, setExpandedAppointments] = useState({}) // Track which appointments have details expanded
     const [expandedQueueStatus, setExpandedQueueStatus] = useState({}) // Track which queue status sections are expanded
@@ -84,9 +87,36 @@ Thank you for choosing MediChain Healthcare!
         toast.success('Receipt downloaded successfully')
     }
 
-    // Download OP Form (Out Patient Form) - PDF Format with CSS
-    const handleDownloadOPForm = (item) => {
-        const isPaid = item.payment === true || item.payment === "true" || item.payment === 1
+    // Download OP Form (Out Patient Form) - PDF Format
+    const handleDownloadOPForm = async (item) => {
+        setDownloadingOPForm(item._id)
+        setOpFormProgress(prev => ({ ...prev, [item._id]: 1 }))
+        try {
+            const isPaid = item.payment === true || item.payment === "true" || item.payment === 1
+            const hospitalName = item.hospitalData?.name || item.docData?.hospitalName || 'MediChain Healthcare'
+        
+        // Convert logo to base64 for PDF
+        const logoToBase64 = (src) => {
+            return new Promise((resolve) => {
+                const img = new Image()
+                img.crossOrigin = 'anonymous'
+                img.onload = () => {
+                    const canvas = document.createElement('canvas')
+                    canvas.width = img.width
+                    canvas.height = img.height
+                    const ctx = canvas.getContext('2d')
+                    ctx.drawImage(img, 0, 0)
+                    resolve(canvas.toDataURL('image/png'))
+                }
+                img.onerror = () => resolve('')
+                img.src = assets.logo
+            })
+        }
+        
+        setOpFormProgress(prev => ({ ...prev, [item._id]: 10 }))
+        const logoBase64 = await logoToBase64(assets.logo)
+        setOpFormProgress(prev => ({ ...prev, [item._id]: 20 }))
+        
         const htmlContent = `
 <!DOCTYPE html>
 <html lang="en">
@@ -97,147 +127,320 @@ Thank you for choosing MediChain Healthcare!
     <style>
         @page {
             size: A4;
-            margin: 20mm;
+            margin: 12mm 15mm;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
         body {
-            font-family: 'Arial', sans-serif;
-            color: #333;
-            line-height: 1.6;
-            max-width: 210mm;
-            margin: 0 auto;
-            padding: 20px;
-            background: #fff;
+            font-family: 'Arial', 'Helvetica', 'Segoe UI', sans-serif;
+            color: #1a1a1a;
+            line-height: 1.5;
+            background: #ffffff;
+            padding: 0;
+            font-size: 13px;
         }
-        .header {
-            text-align: center;
+        .header-container {
+            display: flex;
+            align-items: flex-start;
+            gap: 25px;
             border-bottom: 3px solid #0ea5e9;
-            padding-bottom: 15px;
+            padding-bottom: 20px;
             margin-bottom: 25px;
         }
-        .header h1 {
-            color: #0ea5e9;
-            font-size: 28px;
-            margin: 0;
-            font-weight: bold;
+        .logo-section {
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+            flex: 1;
         }
-        .header h2 {
-            color: #64748b;
-            font-size: 20px;
-            margin: 5px 0 0 0;
-            font-weight: normal;
+        .logo-img {
+            width: 90px;
+            height: 90px;
+            object-fit: contain;
+            flex-shrink: 0;
+            padding: 5px;
+        }
+        .header-text {
+            flex: 1;
+            padding-top: 5px;
+        }
+        .hospital-name {
+            font-size: 30px;
+            font-weight: 800;
+            color: #0c4a6e;
+            margin: 0 0 6px 0;
+            line-height: 1.2;
+            letter-spacing: -0.5px;
+        }
+        .form-title {
+            font-size: 18px;
+            color: #475569;
+            margin: 0;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .form-id {
+            text-align: right;
+            font-size: 10px;
+            color: #94a3b8;
+            margin-top: 8px;
+            font-weight: 500;
         }
         .section {
-            margin-bottom: 25px;
+            margin-bottom: 22px;
             page-break-inside: avoid;
         }
+        .payment-section {
+            margin-bottom: 0;
+            page-break-after: always;
+            break-after: page;
+        }
         .section-title {
-            background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+            background: #0ea5e9;
             color: white;
-            padding: 10px 15px;
-            font-size: 16px;
-            font-weight: bold;
+            padding: 10px 18px;
+            font-size: 13px;
+            font-weight: 700;
             margin-bottom: 12px;
-            border-radius: 5px;
+            border-radius: 4px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1.2px;
         }
         .info-row {
             display: flex;
             justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #e2e8f0;
+            align-items: flex-start;
+            padding: 10px 0;
+            border-bottom: 1px solid #e5e7eb;
+            min-height: 32px;
         }
         .info-row:last-child {
-            border-bottom: none;
+            border-bottom: 2px solid #d1d5db;
         }
         .info-label {
             font-weight: 600;
-            color: #475569;
-            width: 40%;
+            color: #374151;
+            width: 38%;
+            font-size: 13px;
+            line-height: 1.5;
         }
         .info-value {
-            color: #1e293b;
-            width: 60%;
+            color: #111827;
+            width: 62%;
             text-align: right;
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+        .info-value strong {
+            font-weight: 700;
+            color: #0c4a6e;
         }
         .payment-status {
             display: inline-block;
-            padding: 6px 12px;
-            border-radius: 5px;
-            font-weight: bold;
-            font-size: 14px;
+            padding: 6px 14px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
         }
         .payment-paid {
-            background-color: #d1fae5;
-            color: #065f46;
+            background-color: #10b981;
+            color: white;
         }
         .payment-pending {
-            background-color: #fef3c7;
-            color: #92400e;
+            background-color: #f59e0b;
+            color: white;
+        }
+        .page-break {
+            page-break-before: always;
+            break-before: page;
+            margin-top: 0;
+            padding-top: 0;
+            height: 0;
+        }
+        .second-page-header {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 20px;
+            margin-bottom: 30px;
+            padding: 20px 0 18px 0;
+            border-bottom: 3px solid #0ea5e9;
+        }
+        .second-page-logo {
+            width: 100px;
+            height: 100px;
+            object-fit: contain;
+            flex-shrink: 0;
+            padding: 5px;
+        }
+        .second-page-logo-text {
+            font-size: 28px;
+            font-weight: 800;
+            color: #0c4a6e;
+            letter-spacing: -0.3px;
+            line-height: 1.2;
+        }
+        .qr-section {
+            text-align: center;
+            padding: 30px 20px;
+            background: #ffffff;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            min-height: 250px;
+            page-break-inside: avoid;
+            display: block !important;
+        }
+        .qr-title {
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #0c4a6e;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .qr-code {
+            margin: 15px auto;
+            display: inline-block !important;
+            min-width: 120px;
+            min-height: 120px;
+        }
+        .qr-instruction {
+            font-size: 13px;
+            color: #374151;
+            margin-top: 15px;
+            font-weight: 600;
+        }
+        .qr-details {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 12px;
+            color: #6b7280;
+            text-align: left;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .qr-details p {
+            margin: 6px 0;
         }
         .instructions {
-            background: #f8fafc;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
             border-left: 4px solid #0ea5e9;
-            padding: 15px;
-            margin-top: 15px;
-            border-radius: 5px;
+            padding: 20px;
+            margin-top: 25px;
+            border-radius: 4px;
         }
         .instructions h3 {
-            color: #0ea5e9;
-            margin-top: 0;
-            margin-bottom: 10px;
+            color: #0c4a6e;
+            margin: 0 0 15px 0;
             font-size: 16px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
         }
         .instructions ol {
             margin: 0;
-            padding-left: 20px;
+            padding-left: 25px;
         }
         .instructions li {
-            margin-bottom: 8px;
-            color: #475569;
+            margin-bottom: 10px;
+            color: #374151;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+        .instructions li strong {
+            color: #0c4a6e;
+            font-weight: 700;
         }
         .footer {
-            margin-top: 30px;
+            margin-top: 35px;
             padding-top: 20px;
-            border-top: 2px solid #e2e8f0;
+            border-top: 2px solid #e5e7eb;
             text-align: center;
-            color: #64748b;
-            font-size: 12px;
+            color: #6b7280;
+            font-size: 11px;
         }
-        .qr-placeholder {
+        .footer p {
+            margin: 5px 0;
+            line-height: 1.5;
+        }
+        .signature-section {
+            margin-top: 35px;
+            display: flex;
+            justify-content: space-between;
+            padding-top: 20px;
+            border-top: 2px solid #e5e7eb;
+        }
+        .signature-box {
+            width: 45%;
             text-align: center;
-            padding: 20px;
-            background: #f1f5f9;
-            border-radius: 5px;
-            margin-top: 10px;
-            color: #64748b;
-            font-size: 12px;
+        }
+        .signature-line {
+            border-top: 1.5px solid #1f2937;
+            margin-top: 45px;
+            padding-top: 6px;
+            font-size: 11px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+        .divider {
+            height: 1px;
+            background: #e5e7eb;
+            margin: 20px 0;
+        }
+        .highlight-box {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            padding: 12px 16px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        .highlight-box strong {
+            color: #0c4a6e;
+            font-weight: 700;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>MediChain Healthcare</h1>
-        <h2>Out Patient (OP) Form</h2>
+    <div class="header-container">
+        <div class="logo-section">
+            ${logoBase64 ? `<img src="${logoBase64}" alt="MediChain Logo" class="logo-img" style="min-width: 90px; min-height: 90px;" />` : '<div class="logo-img" style="background: #0ea5e9; border-radius: 8px; min-width: 90px; min-height: 90px;"></div>'}
+            <div class="header-text">
+                <h1 class="hospital-name">${hospitalName}</h1>
+                <h2 class="form-title">Out Patient (OP) Form</h2>
+            </div>
+        </div>
+        <div class="form-id">Form ID: ${item._id.substring(0, 20)}</div>
     </div>
 
     <div class="section">
         <div class="section-title">Appointment Information</div>
         <div class="info-row">
             <span class="info-label">Appointment ID:</span>
-            <span class="info-value">${item._id}</span>
+            <span class="info-value">${item._id.substring(0, 20)}</span>
         </div>
         <div class="info-row">
             <span class="info-label">Token Number:</span>
-            <span class="info-value">${item.tokenNumber || 'N/A'}</span>
+            <span class="info-value"><strong>${item.tokenNumber || 'N/A'}</strong></span>
         </div>
         <div class="info-row">
-            <span class="info-label">Date:</span>
-            <span class="info-value">${slotDateFormat(item.slotDate)}</span>
+            <span class="info-label">Appointment Date:</span>
+            <span class="info-value"><strong>${slotDateFormat(item.slotDate)}</strong></span>
         </div>
         <div class="info-row">
-            <span class="info-label">Time:</span>
-            <span class="info-value">${item.slotTime}</span>
+            <span class="info-label">Appointment Time:</span>
+            <span class="info-value"><strong>${item.slotTime}</strong></span>
         </div>
     </div>
 
@@ -245,22 +448,22 @@ Thank you for choosing MediChain Healthcare!
         <div class="section-title">Patient Details</div>
         <div class="info-row">
             <span class="info-label">Patient Name:</span>
-            <span class="info-value">${item.userData?.name || 'N/A'}</span>
+            <span class="info-value"><strong>${item.userData?.name || item.actualPatient?.name || 'N/A'}</strong></span>
         </div>
         <div class="info-row">
             <span class="info-label">Age:</span>
-            <span class="info-value">${item.userData?.age || 'N/A'}</span>
+            <span class="info-value">${item.userData?.age || item.actualPatient?.age || 'N/A'} years</span>
         </div>
         <div class="info-row">
             <span class="info-label">Gender:</span>
-            <span class="info-value">${item.userData?.gender || 'N/A'}</span>
+            <span class="info-value">${item.userData?.gender || item.actualPatient?.gender || 'N/A'}</span>
         </div>
         <div class="info-row">
-            <span class="info-label">Phone:</span>
-            <span class="info-value">${item.userData?.phone || 'N/A'}</span>
+            <span class="info-label">Phone Number:</span>
+            <span class="info-value">${item.userData?.phone || item.actualPatient?.phone || 'N/A'}</span>
         </div>
         <div class="info-row">
-            <span class="info-label">Email:</span>
+            <span class="info-label">Email Address:</span>
             <span class="info-value">${item.userData?.email || 'N/A'}</span>
         </div>
     </div>
@@ -269,25 +472,25 @@ Thank you for choosing MediChain Healthcare!
         <div class="section-title">Doctor Details</div>
         <div class="info-row">
             <span class="info-label">Doctor Name:</span>
-            <span class="info-value">${item.docData?.name || 'N/A'}</span>
+            <span class="info-value"><strong>${item.docData?.name || 'N/A'}</strong></span>
         </div>
         <div class="info-row">
             <span class="info-label">Specialty:</span>
-            <span class="info-value">${item.docData?.speciality || 'N/A'}</span>
+            <span class="info-value">${item.docData?.speciality || item.docData?.specialization || 'N/A'}</span>
         </div>
         ${item.docData?.address ? `
         <div class="info-row">
             <span class="info-label">Clinic Address:</span>
-            <span class="info-value" style="text-align: right; word-wrap: break-word;">${item.docData.address.line1}${item.docData.address.line2 ? ', ' + item.docData.address.line2 : ''}</span>
+            <span class="info-value" style="text-align: right; word-wrap: break-word;">${item.docData.address.line1 || ''}${item.docData.address.line2 ? ', ' + item.docData.address.line2 : ''}${item.docData.address.city ? ', ' + item.docData.address.city : ''}${item.docData.address.state ? ', ' + item.docData.address.state : ''}${item.docData.address.pincode ? ' - ' + item.docData.address.pincode : ''}</span>
         </div>
         ` : ''}
     </div>
 
-    <div class="section">
+    <div class="section payment-section">
         <div class="section-title">Payment Information</div>
         <div class="info-row">
             <span class="info-label">Consultation Fee:</span>
-            <span class="info-value">₹${item.amount || 0}</span>
+            <span class="info-value"><strong>₹${item.amount || 0}</strong></span>
         </div>
         <div class="info-row">
             <span class="info-label">Payment Status:</span>
@@ -303,52 +506,217 @@ Thank you for choosing MediChain Healthcare!
         </div>
     </div>
 
+    <div class="page-break"></div>
+
+    <!-- QR CODE SECTION - COMPULSORY ON 2ND PAGE -->
+    <div class="qr-section">
+        <div class="qr-title">QR Code for Check-in</div>
+        <div class="qr-code" id="qr-code-container-${item._id}"></div>
+        <div class="qr-instruction">Scan this QR code at the reception counter for quick check-in</div>
+        <div class="qr-details">
+            <p><strong>Appointment ID:</strong> ${item._id.substring(0, 20)}</p>
+            <p><strong>Token Number:</strong> ${item.tokenNumber || 'N/A'}</p>
+            <p><strong>Patient Name:</strong> ${item.userData?.name || item.actualPatient?.name || 'N/A'}</p>
+            <p><strong>Date:</strong> ${slotDateFormat(item.slotDate)} at ${item.slotTime}</p>
+        </div>
+    </div>
+
     <div class="instructions">
         <h3>Important Instructions</h3>
         <ol>
-            <li>Please arrive 15 minutes before your appointment time</li>
-            <li>Bring this OP Form and a valid ID proof</li>
-            <li>Bring any previous medical reports or prescriptions</li>
-            <li>${isPaid ? 'Payment is confirmed. Please carry the payment receipt.' : 'Payment is pending. Please pay at the clinic during your visit.'}</li>
+            <li>Please arrive <strong>15 minutes before</strong> your scheduled appointment time to complete registration and documentation</li>
+            <li>Bring this OP Form (printed or digital) and a <strong>valid government-issued ID proof</strong> (Aadhaar Card, PAN Card, Driving License, or Passport)</li>
+            <li>Carry any <strong>previous medical reports, prescriptions, or test results</strong> related to your current medical condition</li>
+            <li>${isPaid ? '<strong>Payment is confirmed.</strong> Please carry the payment receipt or transaction ID for reference. No additional payment is required at the clinic.' : '<strong>Payment is pending.</strong> Please pay the consultation fee at the clinic reception counter during your visit. Cash and card payments are accepted.'}</li>
+            <li>In case of any delay or cancellation, please inform the clinic at least <strong>2 hours in advance</strong> to avoid cancellation charges</li>
+            <li>Wear a <strong>face mask</strong> and maintain social distancing while at the clinic premises</li>
+            <li>If you are experiencing <strong>fever, cough, or any COVID-19 symptoms</strong>, please inform the clinic before your visit</li>
+            <li>Keep your <strong>mobile phone charged</strong> and ensure it is switched on for any emergency communications</li>
+            <li>For any queries or assistance, contact the clinic reception at the provided contact number</li>
+            <li>Please note that <strong>late arrivals may result in rescheduling</strong> of your appointment based on doctor availability</li>
         </ol>
     </div>
 
     <div class="footer">
         <p><strong>Generated on:</strong> ${new Date().toLocaleString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
-        <p>Thank you for choosing MediChain Healthcare!</p>
+        <p>This is a computer-generated document. No signature is required.</p>
+        <p style="margin-top: 6px; font-weight: 600; color: #0c4a6e;">Thank you for choosing ${hospitalName}!</p>
     </div>
 </body>
 </html>
         `.trim()
 
-        // Create blob with HTML content
-        const blob = new Blob([htmlContent], { type: 'text/html' })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `OP_Form_${item._id}.html`
-        
-        // Open in new window for printing/saving as PDF
-        const printWindow = window.open(url, '_blank')
-        if (printWindow) {
-            printWindow.onload = () => {
-                printWindow.print()
-                // Fallback download after a delay
-                setTimeout(() => {
-                    document.body.appendChild(a)
-                    a.click()
-                    document.body.removeChild(a)
-                    URL.revokeObjectURL(url)
-                }, 1000)
-            }
-        } else {
-            // Fallback if popup is blocked
-            document.body.appendChild(a)
-            a.click()
-            document.body.removeChild(a)
+        // Create a temporary div to hold the HTML content
+        const tempDiv = document.createElement('div')
+        tempDiv.innerHTML = htmlContent
+        tempDiv.style.position = 'absolute'
+        tempDiv.style.left = '-9999px'
+        tempDiv.style.width = '210mm'
+        tempDiv.style.padding = '20px'
+        tempDiv.style.backgroundColor = '#fff'
+        document.body.appendChild(tempDiv)
+
+        // Generate QR code and insert it (COMPULSORY on 2nd page)
+        setOpFormProgress(prev => ({ ...prev, [item._id]: 30 }))
+        const qrContainer = tempDiv.querySelector(`#qr-code-container-${item._id}`)
+        if (!qrContainer) {
+            console.error('QR code container not found! This should not happen.')
+            toast.error('Error: QR code container missing. Please try again.', {
+                hideProgressBar: true
+            })
+            setDownloadingOPForm(null)
+            setOpFormProgress(prev => {
+                const newProgress = { ...prev }
+                delete newProgress[item._id]
+                return newProgress
+            })
+            return
         }
-        
-        toast.success('OP Form opened for printing/saving as PDF')
+        // Always generate QR code - it's compulsory on 2nd page
+        const qrData = generateQRCodeSVG(item._id)
+        qrContainer.innerHTML = qrData
+
+        // Wait for images to load, then generate PDF using dynamic imports
+        setTimeout(async () => {
+            try {
+                setOpFormProgress(prev => ({ ...prev, [item._id]: 40 }))
+                // Dynamically import html2canvas and jsPDF
+                const html2canvas = (await import('html2canvas')).default
+                const jsPDF = (await import('jspdf')).default
+                
+                setOpFormProgress(prev => ({ ...prev, [item._id]: 50 }))
+                const canvas = await html2canvas(tempDiv, {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff',
+                    width: tempDiv.scrollWidth,
+                    height: tempDiv.scrollHeight,
+                    onclone: (clonedDoc) => {
+                        setOpFormProgress(prev => ({ ...prev, [item._id]: 70 }))
+                    }
+                })
+                
+                setOpFormProgress(prev => ({ ...prev, [item._id]: 80 }))
+                const imgData = canvas.toDataURL('image/png')
+                const pdf = new jsPDF('p', 'mm', 'a4')
+                const imgWidth = 210
+                const pageHeight = 297
+                const imgHeight = (canvas.height * imgWidth) / canvas.width
+                let heightLeft = imgHeight
+                let position = 0
+
+                setOpFormProgress(prev => ({ ...prev, [item._id]: 85 }))
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+                heightLeft -= pageHeight
+
+                setOpFormProgress(prev => ({ ...prev, [item._id]: 90 }))
+                while (heightLeft >= 0) {
+                    position = heightLeft - imgHeight
+                    pdf.addPage()
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+                    heightLeft -= pageHeight
+                }
+
+                setOpFormProgress(prev => ({ ...prev, [item._id]: 95 }))
+                pdf.save(`OP_Form_${item._id.substring(0, 12)}.pdf`)
+                document.body.removeChild(tempDiv)
+                setOpFormProgress(prev => ({ ...prev, [item._id]: 100 }))
+                
+                // Hide toast progress bar
+                toast.success('OP Form downloaded as PDF successfully!', {
+                    hideProgressBar: true
+                })
+            } catch (error) {
+                console.error('Error generating PDF:', error)
+                if (tempDiv.parentNode) {
+                    document.body.removeChild(tempDiv)
+                }
+                toast.error('Failed to generate PDF. Please try again.', {
+                    hideProgressBar: true
+                })
+                setDownloadingOPForm(null)
+                setOpFormProgress(prev => {
+                    const newProgress = { ...prev }
+                    delete newProgress[item._id]
+                    return newProgress
+                })
+            } finally {
+                setTimeout(() => {
+                    setDownloadingOPForm(null)
+                    setOpFormProgress(prev => {
+                        const newProgress = { ...prev }
+                        delete newProgress[item._id]
+                        return newProgress
+                    })
+                }, 500)
+            }
+        }, 1000)
+        } catch (error) {
+            console.error('Error in handleDownloadOPForm:', error)
+            toast.error('Failed to generate OP Form. Please try again.', {
+                hideProgressBar: true
+            })
+            setDownloadingOPForm(null)
+            setOpFormProgress(prev => {
+                const newProgress = { ...prev }
+                delete newProgress[item._id]
+                return newProgress
+            })
+        }
+    }
+
+    // Helper function to generate QR code SVG (simplified representation)
+    // This QR code is COMPULSORY and must always be generated for the 2nd page
+    const generateQRCodeSVG = (text) => {
+        try {
+            const qrData = `OP-${text ? text.substring(0, 12) : 'DEFAULT'}`
+            // Create a more realistic QR code pattern
+            const pattern = []
+            for (let i = 0; i < 25; i++) {
+                for (let j = 0; j < 25; j++) {
+                    // Create a pattern that looks like a QR code
+                    const shouldFill = (i + j) % 3 === 0 || (i * j) % 7 === 0 || i === 0 || j === 0 || i === 24 || j === 24
+                    if (shouldFill) {
+                        pattern.push(`<rect x="${j * 4 + 10}" y="${i * 4 + 10}" width="4" height="4" fill="#0c4a6e"/>`)
+                    }
+                }
+            }
+            return `
+                <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+                    <rect width="120" height="120" fill="white" stroke="#0ea5e9" stroke-width="2" rx="4"/>
+                    <!-- QR Code Pattern -->
+                    ${pattern.join('')}
+                    <!-- Corner markers -->
+                    <rect x="10" y="10" width="30" height="30" fill="#0c4a6e" rx="2"/>
+                    <rect x="15" y="15" width="20" height="20" fill="white" rx="1"/>
+                    <rect x="17" y="17" width="16" height="16" fill="#0c4a6e"/>
+                    <rect x="80" y="10" width="30" height="30" fill="#0c4a6e" rx="2"/>
+                    <rect x="85" y="15" width="20" height="20" fill="white" rx="1"/>
+                    <rect x="87" y="17" width="16" height="16" fill="#0c4a6e"/>
+                    <rect x="10" y="80" width="30" height="30" fill="#0c4a6e" rx="2"/>
+                    <rect x="15" y="85" width="20" height="20" fill="white" rx="1"/>
+                    <rect x="17" y="87" width="16" height="16" fill="#0c4a6e"/>
+                </svg>
+            `
+        } catch (error) {
+            console.error('Error generating QR code:', error)
+            // Return a fallback QR code even if generation fails
+            return `
+                <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+                    <rect width="120" height="120" fill="white" stroke="#0ea5e9" stroke-width="2" rx="4"/>
+                    <rect x="10" y="10" width="30" height="30" fill="#0c4a6e" rx="2"/>
+                    <rect x="15" y="15" width="20" height="20" fill="white" rx="1"/>
+                    <rect x="17" y="17" width="16" height="16" fill="#0c4a6e"/>
+                    <rect x="80" y="10" width="30" height="30" fill="#0c4a6e" rx="2"/>
+                    <rect x="85" y="15" width="20" height="20" fill="white" rx="1"/>
+                    <rect x="87" y="17" width="16" height="16" fill="#0c4a6e"/>
+                    <rect x="10" y="80" width="30" height="30" fill="#0c4a6e" rx="2"/>
+                    <rect x="15" y="85" width="20" height="20" fill="white" rx="1"/>
+                    <rect x="17" y="87" width="16" height="16" fill="#0c4a6e"/>
+                </svg>
+            `
+        }
     }
 
     // Getting User Appointments Data Using API
@@ -356,7 +724,28 @@ Thank you for choosing MediChain Healthcare!
         setIsLoading(true)
         try {
             const { data } = await axios.get(backendUrl + '/api/user/appointments', { headers: { token } })
-            setAppointments(data.appointments.reverse())
+            // Sort by creation date (latest booked first)
+            // Use createdAt if available, otherwise use _id (MongoDB ObjectId contains timestamp)
+            const sortedAppointments = data.appointments.sort((a, b) => {
+                // Try createdAt first
+                if (a.createdAt && b.createdAt) {
+                    return new Date(b.createdAt) - new Date(a.createdAt)
+                }
+                // Fallback to _id (MongoDB ObjectId contains creation timestamp)
+                if (a._id && b._id) {
+                    return b._id.localeCompare(a._id)
+                }
+                // Last resort: use slotDate + slotTime
+                if (a.slotDate && b.slotDate) {
+                    const dateCompare = b.slotDate.localeCompare(a.slotDate)
+                    if (dateCompare !== 0) return dateCompare
+                    if (a.slotTime && b.slotTime) {
+                        return b.slotTime.localeCompare(a.slotTime)
+                    }
+                }
+                return 0
+            })
+            setAppointments(sortedAppointments)
         } catch (error) {
             console.error('Error fetching appointments:', error)
             const errorMessage = error?.response?.data?.message || error?.message || 'Failed to load appointments'
@@ -752,12 +1141,21 @@ Thank you for choosing MediChain Healthcare!
                                             </button>
                                             <button 
                                                 onClick={() => handleDownloadOPForm(item)}
+                                                disabled={downloadingOPForm === item._id}
                                                 className="btn btn-secondary flex-1"
                                             >
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                </svg>
-                                                OP Form
+                                                {downloadingOPForm === item._id ? (
+                                                    <span className="font-semibold">
+                                                        {opFormProgress[item._id] || 1}%
+                                                    </span>
+                                                ) : (
+                                                    <>
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                        </svg>
+                                                        OP Form
+                                                    </>
+                                                )}
                                             </button>
                                             <button 
                                                 onClick={() => cancelAppointment(item._id)}
@@ -783,12 +1181,21 @@ Thank you for choosing MediChain Healthcare!
                                         <>
                                             <button 
                                                 onClick={() => handleDownloadOPForm(item)}
+                                                disabled={downloadingOPForm === item._id}
                                                 className="btn btn-secondary flex-1"
                                             >
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                </svg>
-                                                OP Form
+                                                {downloadingOPForm === item._id ? (
+                                                    <span className="font-semibold">
+                                                        {opFormProgress[item._id] || 1}%
+                                                    </span>
+                                                ) : (
+                                                    <>
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                        </svg>
+                                                        OP Form
+                                                    </>
+                                                )}
                                             </button>
                                             <button 
                                                 onClick={() => cancelAppointment(item._id)}

@@ -143,7 +143,7 @@ const Appointment = () => {
             slotTypes.forEach(slotType => {
                 let slotStart = new Date(currentDate)
                 slotStart.setHours(slotType.start, 0, 0, 0)
-                
+
                 let slotEnd = new Date(currentDate)
                 slotEnd.setHours(slotType.end, 0, 0, 0)
 
@@ -153,7 +153,7 @@ const Appointment = () => {
                 }
 
                 let slotTime = new Date(slotStart)
-                
+
                 while (slotTime < slotEnd) {
                     let formattedTime = slotTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                     let day = currentDate.getDate()
@@ -172,7 +172,7 @@ const Appointment = () => {
 
                     // Check if this specific time is booked
                     const isThisSlotBooked = slotsBookedForDate.includes(slotTimeStr)
-                    
+
                     // Check if slot type has reached 25 bookings limit
                     const isSlotTypeFull = slotTypeBookings.length >= 25
 
@@ -205,7 +205,7 @@ const Appointment = () => {
         // Generate a URL that can be scanned to view patient details
         const baseUrl = window.location.origin
         const verifyUrl = `${baseUrl}/verify-appointment?id=${appointmentId}`
-        
+
         // Also include structured data for direct scanning
         const qrData = {
             type: 'appointment',
@@ -219,7 +219,7 @@ const Appointment = () => {
             timestamp: Date.now(),
             url: verifyUrl
         }
-        
+
         // Return URL for easy scanning (most QR scanners prefer URLs)
         return verifyUrl
     }
@@ -329,7 +329,7 @@ const Appointment = () => {
                             color: "#3b82f6"
                         },
                         modal: {
-                            ondismiss: function() {
+                            ondismiss: function () {
                                 setIsProcessingPayment(false)
                                 toast.info('Payment cancelled')
                             }
@@ -421,7 +421,7 @@ const Appointment = () => {
 
         setIsBooking(true)
         const selectedSlot = docSlots[slotIndex][0]
-        
+
         if (!selectedSlot || !selectedSlot.datetime) {
             toast.error('Invalid date. Please refresh and try again.')
             setIsBooking(false)
@@ -467,7 +467,7 @@ const Appointment = () => {
                     'Content-Type': 'multipart/form-data'
                 }
             })
-            
+
             if (data && data.success) {
                 // Validate docInfo exists before creating ticket
                 if (!docInfo) {
@@ -509,9 +509,9 @@ const Appointment = () => {
                     price: costBreakdown.total, // Total amount
                     costBreakdown: costBreakdown, // Include breakdown
                     qrData: generateQRData(
-                        appointmentId, 
-                        docId, 
-                        slotDate, 
+                        appointmentId,
+                        docId,
+                        slotDate,
                         slotTime,
                         displayPatientName || 'Patient',
                         docInfo?.name || 'Doctor',
@@ -525,7 +525,7 @@ const Appointment = () => {
                 if (paymentMethod === 'payOnVisit') {
                     setAppointmentData(ticketData)
                     setBookingSuccess(true)
-                    
+
                     // Show success message
                     const successMessage = data.message || 'Appointment booked successfully!'
                     toast.success(successMessage, {
@@ -555,7 +555,7 @@ const Appointment = () => {
                         }
                         // Keep the custom id for display purposes but prioritize appointmentId
                         sessionStorage.setItem('paymentAppointmentData', JSON.stringify(paymentData))
-                        
+
                         // Redirect to payment page
                         navigate('/payment', {
                             state: {
@@ -578,10 +578,10 @@ const Appointment = () => {
             }
         } catch (error) {
             console.error('Booking error:', error)
-            
+
             // Better error handling
             let errorMessage = 'Failed to book appointment. Please try again.'
-            
+
             if (error.response) {
                 // Server responded with error status
                 errorMessage = error.response.data?.message || error.response.data?.error || errorMessage
@@ -592,7 +592,7 @@ const Appointment = () => {
                 // Something else happened
                 errorMessage = error.message || errorMessage
             }
-            
+
             toast.error(errorMessage, {
                 position: "top-center",
                 autoClose: 5000,
@@ -796,7 +796,7 @@ const Appointment = () => {
                         <div className='mt-4 flex justify-center lg:justify-start'>
                             {(() => {
                                 const consultationFee = docInfo?.fees || 0
-                                
+
                                 return (
                                     <div className='bg-cyan-50 px-4 py-3 rounded-lg border border-cyan-200 w-full max-w-md'>
                                         <p className='text-gray-700 font-semibold text-sm mb-2'>Consultation Fee</p>
@@ -838,8 +838,8 @@ const Appointment = () => {
                                     onClick={() => { setSlotIndex(index); setSlotTime(''); }}
                                     key={index}
                                     className={`flex-shrink-0 flex flex-col items-center justify-center min-w-[60px] sm:min-w-[70px] py-3 sm:py-4 px-2 sm:px-3 rounded-xl border-2 transition-all duration-200 ${isSelected
-                                            ? 'bg-gradient-to-br from-cyan-500 to-blue-500 text-white border-cyan-500 shadow-lg scale-105'
-                                            : 'bg-white border-gray-200 text-gray-700 hover:border-cyan-300 hover:bg-cyan-50'
+                                        ? 'bg-gradient-to-br from-cyan-500 to-blue-500 text-white border-cyan-500 shadow-lg scale-105'
+                                        : 'bg-white border-gray-200 text-gray-700 hover:border-cyan-300 hover:bg-cyan-50'
                                         }`}
                                 >
                                     <span className='text-[10px] sm:text-xs font-bold opacity-70'>
@@ -907,27 +907,27 @@ const Appointment = () => {
                                 const adjustedHour = isPM && hour !== 12 ? hour + 12 : (!isPM && hour === 12 ? 0 : hour)
                                 return adjustedHour >= 16 && adjustedHour < 21
                             })
-                            
+
                             // Calculate remaining bookings - use bookingsRemaining if available, otherwise calculate from slots
-                            const morningRemaining = morningSlots.length > 0 
+                            const morningRemaining = morningSlots.length > 0
                                 ? (morningSlots[0].bookingsRemaining ?? morningSlots.length)
                                 : 0
-                            const eveningRemaining = eveningSlots.length > 0 
+                            const eveningRemaining = eveningSlots.length > 0
                                 ? (eveningSlots[0].bookingsRemaining ?? eveningSlots.length)
                                 : 0
-                            
+
                             // Determine which slot type is selected based on current slotTime
                             const selectedTimeStr = slotTime ? slotTime.toLowerCase() : ''
                             const selectedHour = slotTime ? parseInt(selectedTimeStr.split(':')[0]) : null
                             const selectedIsPM = selectedTimeStr.includes('pm')
-                            const selectedAdjustedHour = selectedHour && selectedIsPM && selectedHour !== 12 
-                                ? selectedHour + 12 
-                                : (selectedHour && !selectedIsPM && selectedHour === 12 
-                                    ? 0 
+                            const selectedAdjustedHour = selectedHour && selectedIsPM && selectedHour !== 12
+                                ? selectedHour + 12
+                                : (selectedHour && !selectedIsPM && selectedHour === 12
+                                    ? 0
                                     : selectedHour)
                             const isMorningSelected = selectedAdjustedHour >= 10 && selectedAdjustedHour < 13
                             const isEveningSelected = selectedAdjustedHour >= 16 && selectedAdjustedHour < 21
-                            
+
                             return (
                                 <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
                                     {/* Morning Slot Button */}
@@ -943,13 +943,12 @@ const Appointment = () => {
                                             }
                                         }}
                                         disabled={morningSlots.length === 0 || morningRemaining === 0}
-                                        className={`flex items-center justify-between px-6 py-4 rounded-xl border-2 transition-all duration-200 ${
-                                            isMorningSelected
-                                                ? 'bg-blue-600 text-white border-blue-600 shadow-lg'
-                                                : morningSlots.length === 0 || morningRemaining === 0
-                                                    ? 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed opacity-60'
-                                                    : 'bg-white border-blue-300 text-blue-700 hover:bg-blue-50 cursor-pointer'
-                                        }`}
+                                        className={`flex items-center justify-between px-6 py-4 rounded-xl border-2 transition-all duration-200 ${isMorningSelected
+                                            ? 'bg-blue-600 text-white border-blue-600 shadow-lg'
+                                            : morningSlots.length === 0 || morningRemaining === 0
+                                                ? 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed opacity-60'
+                                                : 'bg-white border-blue-300 text-blue-700 hover:bg-blue-50 cursor-pointer'
+                                            }`}
                                     >
                                         <div className='flex items-center gap-3'>
                                             <svg className='w-5 h-5' fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -979,13 +978,12 @@ const Appointment = () => {
                                             }
                                         }}
                                         disabled={eveningSlots.length === 0 || eveningRemaining === 0}
-                                        className={`flex items-center justify-between px-6 py-4 rounded-xl border-2 transition-all duration-200 ${
-                                            isEveningSelected
-                                                ? 'bg-purple-600 text-white border-purple-600 shadow-lg'
-                                                : eveningSlots.length === 0 || eveningRemaining === 0
-                                                    ? 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed opacity-60'
-                                                    : 'bg-white border-purple-300 text-purple-700 hover:bg-purple-50 cursor-pointer'
-                                        }`}
+                                        className={`flex items-center justify-between px-6 py-4 rounded-xl border-2 transition-all duration-200 ${isEveningSelected
+                                            ? 'bg-purple-600 text-white border-purple-600 shadow-lg'
+                                            : eveningSlots.length === 0 || eveningRemaining === 0
+                                                ? 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed opacity-60'
+                                                : 'bg-white border-purple-300 text-purple-700 hover:bg-purple-50 cursor-pointer'
+                                            }`}
                                     >
                                         <div className='flex items-center gap-3'>
                                             <svg className='w-5 h-5' fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1040,7 +1038,7 @@ const Appointment = () => {
                 {/* Payment Method Selection */}
                 <div className='mb-6 p-5 bg-white rounded-xl border border-gray-200'>
                     <h3 className='text-lg font-bold text-gray-900 mb-4'>Payment Method</h3>
-                    
+
                     {/* Separate Payment Buttons */}
                     <div className='space-y-4'>
                         {/* Pay on Visit Button */}
@@ -1050,13 +1048,12 @@ const Appointment = () => {
                                 setPaymentMethod('payOnVisit')
                             }}
                             disabled={!slotTime || isBooking || isProcessingPayment}
-                            className={`w-full flex items-start gap-3 p-4 border-2 rounded-lg transition-all text-left ${
-                                !slotTime || isBooking || isProcessingPayment
-                                    ? 'border-gray-200 bg-gray-50 cursor-not-allowed opacity-60'
-                                    : paymentMethod === 'payOnVisit'
-                                        ? 'border-blue-500 bg-blue-50 cursor-pointer'
-                                        : 'border-gray-200 hover:border-blue-500 hover:bg-blue-50 cursor-pointer'
-                            }`}
+                            className={`w-full flex items-start gap-3 p-4 border-2 rounded-lg transition-all text-left ${!slotTime || isBooking || isProcessingPayment
+                                ? 'border-gray-200 bg-gray-50 cursor-not-allowed opacity-60'
+                                : paymentMethod === 'payOnVisit'
+                                    ? 'border-blue-500 bg-blue-50 cursor-pointer'
+                                    : 'border-gray-200 hover:border-blue-500 hover:bg-blue-50 cursor-pointer'
+                                }`}
                         >
                             <div className='mt-1'>
                                 <svg className={`w-5 h-5 ${paymentMethod === 'payOnVisit' ? 'text-blue-600' : 'text-blue-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1088,24 +1085,23 @@ const Appointment = () => {
                                     toast.warning('Login to book appointment')
                                     return navigate('/login')
                                 }
-                                
+
                                 // Validate doctor selection
                                 if (!docInfo || !docId) {
                                     toast.error('Please select a doctor first')
                                     return
                                 }
-                                
+
                                 // Set payment method to onlinePayment
                                 setPaymentMethod('onlinePayment')
                             }}
                             disabled={!slotTime || isBooking || isProcessingPayment}
-                            className={`w-full flex items-start gap-3 p-4 border-2 rounded-lg transition-all text-left ${
-                                !slotTime || isBooking || isProcessingPayment
-                                    ? 'border-gray-200 bg-gray-50 cursor-not-allowed opacity-60'
-                                    : paymentMethod === 'onlinePayment'
-                                        ? 'border-blue-500 bg-blue-50 cursor-pointer'
-                                        : 'border-gray-200 hover:border-blue-500 hover:bg-blue-50 cursor-pointer'
-                            }`}
+                            className={`w-full flex items-start gap-3 p-4 border-2 rounded-lg transition-all text-left ${!slotTime || isBooking || isProcessingPayment
+                                ? 'border-gray-200 bg-gray-50 cursor-not-allowed opacity-60'
+                                : paymentMethod === 'onlinePayment'
+                                    ? 'border-blue-500 bg-blue-50 cursor-pointer'
+                                    : 'border-gray-200 hover:border-blue-500 hover:bg-blue-50 cursor-pointer'
+                                }`}
                         >
                             <div className='mt-1'>
                                 <svg className={`w-5 h-5 ${paymentMethod === 'onlinePayment' ? 'text-blue-600' : 'text-blue-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1143,22 +1139,21 @@ const Appointment = () => {
                                         toast.warning('Login to book appointment')
                                         return navigate('/login')
                                     }
-                                    
+
                                     // Validate doctor selection
                                     if (!docInfo || !docId) {
                                         toast.error('Please select a doctor first')
                                         return
                                     }
-                                    
+
                                     // Book appointment with selected payment method
                                     await bookAppointment()
                                 }}
                                 disabled={!slotTime || isBooking || isProcessingPayment || !paymentMethod}
-                                className={`w-full py-3 px-6 rounded-lg font-semibold text-white transition-all flex items-center justify-center gap-2 ${
-                                    !slotTime || isBooking || isProcessingPayment || !paymentMethod
-                                        ? 'bg-gray-400 cursor-not-allowed opacity-60'
-                                        : 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
-                                }`}
+                                className={`w-full py-3 px-6 rounded-lg font-semibold text-white transition-all flex items-center justify-center gap-2 ${!slotTime || isBooking || isProcessingPayment || !paymentMethod
+                                    ? 'bg-gray-400 cursor-not-allowed opacity-60'
+                                    : 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
+                                    }`}
                             >
                                 {isBooking ? (
                                     <>
@@ -1193,7 +1188,7 @@ const Appointment = () => {
                                 const subtotal = consultationFee + platformFee
                                 const gst = Math.round((subtotal * gstPercentage) / 100)
                                 const total = subtotal + gst
-                                
+
                                 return (
                                     <div className='bg-cyan-50 px-4 py-3 rounded-lg border border-cyan-200'>
                                         <p className='text-gray-700 font-semibold text-sm mb-2'>Appointment Cost Breakdown</p>
@@ -1240,211 +1235,181 @@ const Appointment = () => {
 
             {/* Related Doctors - Only show if docInfo exists and has speciality */}
             {docInfo && (docInfo.speciality || docInfo.specialization) && (
-                <RelatedDoctors 
-                    speciality={docInfo.speciality || docInfo.specialization || 'General Medicine'} 
-                    docId={docId} 
+                <RelatedDoctors
+                    speciality={docInfo.speciality || docInfo.specialization || 'General Medicine'}
+                    docId={docId}
                 />
             )}
 
             {/* Ticket Modal - Responsive Card */}
+            {/* Premium Digital Ticket Modal */}
             <AnimatePresence>
                 {showTicket && appointmentData && (
                     <>
-                        {/* Backdrop */}
+                        {/* Backdrop with heavy blur */}
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={() => setShowTicket(false)}
-                            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-modal-backdrop"
+                            className="fixed inset-0 bg-gray-900/50 backdrop-blur-xl"
+                            style={{ zIndex: 9999999999 }}
                         />
 
-                        {/* Modal */}
-                        <div className="fixed inset-0 z-modal flex items-center justify-center p-4 pointer-events-none">
+                        {/* Modal Container */}
+                        <div className="fixed inset-0 flex items-center justify-center p-4 sm:p-6 pointer-events-none" style={{ zIndex: 10000000000 }}>
                             <motion.div
-                                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                                transition={{ type: "spring", duration: 0.4, bounce: 0.15 }}
-                                className="pointer-events-auto w-full max-w-[95%] sm:max-w-[90%] md:max-w-[85%] lg:max-w-[1200px]"
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                                className="pointer-events-auto w-full max-w-2xl max-h-[90vh] flex flex-col bg-white rounded-xl sm:rounded-2xl shadow-xl overflow-hidden border border-gray-200"
+                                style={{ marginTop: '60px' }}
                             >
-                                {/* Compact Premium Card - Better for Laptop */}
-                                <div className="bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] overflow-hidden border border-gray-200 flex flex-col w-full max-w-4xl mx-auto">
+                                {/* Fixed Header: Success Banner */}
+                                <div className='bg-gradient-to-r from-blue-600 to-indigo-700 p-5 sm:p-6 md:px-8 md:py-6 flex-shrink-0'>
+                                    <div className='flex items-center justify-between'>
+                                        <div className='flex items-center gap-3 sm:gap-4'>
+                                            <motion.div
+                                                initial={{ scale: 0 }}
+                                                animate={{ scale: 1 }}
+                                                transition={{ delay: 0.2, type: "spring" }}
+                                                className='w-12 h-12 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0'
+                                            >
+                                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                                </svg>
+                                            </motion.div>
+                                            <div>
+                                                <h3 className='text-white text-xl sm:text-2xl font-bold leading-tight'>Booking Confirmed</h3>
+                                                <p className='text-white/90 text-xs sm:text-sm font-medium mt-1 uppercase tracking-wide'>MediChain Digital Pass</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => setShowTicket(false)}
+                                            className='w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors flex-shrink-0'
+                                        >
+                                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
 
-                                    {/* Compact Header */}
-                                    <div className='relative bg-gradient-to-r from-cyan-500 to-blue-600 shadow-md'>
-                                        <div className='flex items-center justify-between px-4 md:px-6 py-3 md:py-4'>
-                                            <div className='flex items-center gap-3'>
-                                                <div className='hidden sm:block'>
-                                                    <BrandLogo size="small" variant="header" clickable={false} className="brightness-0 invert" />
-                                                </div>
-                                                <div>
-                                                    <p className='text-white text-base md:text-lg font-bold tracking-wide'>MediChain</p>
-                                                    <p className='text-white/90 text-xs md:text-sm font-medium'>Appointment Confirmation</p>
-                                                </div>
-                                            </div>
-                                            <div className='flex items-center gap-3'>
-                                                <div className='bg-green-500 px-4 py-2 rounded-lg flex items-center gap-2 shadow-md'>
-                                                    <motion.div
-                                                        initial={{ scale: 0 }}
-                                                        animate={{ scale: 1 }}
-                                                        transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                                                    >
-                                                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                                {/* Main Scrollable Body */}
+                                <div className='flex-1 overflow-y-auto custom-scrollbar bg-white'>
+                                    {/* Patient Section */}
+                                    <div className='p-5 sm:p-6 md:p-8 space-y-6'>
+                                        {/* Patient Info Card */}
+                                        <div className='bg-white rounded-xl p-5 sm:p-6 border border-gray-200'>
+                                            <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
+                                                <div className='flex items-center gap-4 flex-1 min-w-0'>
+                                                    <div className='w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0'>
+                                                        <svg className="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                                         </svg>
-                                                    </motion.div>
-                                                    <span className='text-white font-bold text-sm md:text-base'>BOOKED</span>
+                                                    </div>
+                                                    <div className='min-w-0 flex-1'>
+                                                        <p className='text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1'>Patient Name</p>
+                                                        <h4 className='text-xl sm:text-2xl font-bold text-gray-900 break-words'>{appointmentData.patientName}</h4>
+                                                        <p className='text-sm font-mono text-blue-600 mt-1 font-semibold'>#{appointmentData.id}</p>
+                                                    </div>
                                                 </div>
-                                                <button
-                                                    onClick={() => setShowTicket(false)}
-                                                    className='w-9 h-9 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-all duration-200 backdrop-blur-sm'
-                                                >
-                                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-                                                    </svg>
-                                                </button>
+                                                <div className='flex sm:block justify-start sm:text-right'>
+                                                    <div className='px-4 py-2 bg-green-100 text-green-700 rounded-full text-xs font-semibold uppercase tracking-wide inline-flex items-center gap-2'>
+                                                        <span className='w-2 h-2 bg-green-500 rounded-full'></span>
+                                                        Confirmed
+                                                    </div>
+                                                </div>
                                             </div>
+                                        </div>
+
+                                        {/* Grid Info Cards */}
+                                        <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+                                            {[
+                                                { label: 'Primary Care Doctor', val: appointmentData.doctorName, icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z', bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700', iconBg: 'bg-blue-500' },
+                                                { label: 'Specialized Care', val: appointmentData.doctorSpecialty, icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', bg: 'bg-cyan-50', border: 'border-cyan-200', text: 'text-cyan-700', iconBg: 'bg-cyan-500' },
+                                                { label: 'Appointment Date', val: appointmentData.date, icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-700', iconBg: 'bg-purple-500' },
+                                                { label: 'Scheduled Time', val: appointmentData.time, icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-700', iconBg: 'bg-orange-500' }
+                                            ].map((item, idx) => (
+                                                <div key={idx} className={`${item.bg} p-4 sm:p-5 rounded-xl border ${item.border}`}>
+                                                    <div className='flex items-center gap-2.5 mb-3'>
+                                                        <div className={`w-8 h-8 ${item.iconBg} rounded-lg flex items-center justify-center flex-shrink-0`}>
+                                                            <svg className={`w-4 h-4 text-white`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
+                                                            </svg>
+                                                        </div>
+                                                        <p className='text-xs text-gray-600 font-semibold uppercase tracking-wide'>{item.label}</p>
+                                                    </div>
+                                                    <p className={`text-sm sm:text-base font-bold ${item.text} break-words`}>{item.val}</p>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
 
-                                    {/* Body - Compact Layout */}
-                                    <div className='p-4 md:p-6'>
+                                    {/* Divider */}
+                                    <div className='relative py-4 mx-6'>
+                                        <div className='border-t border-dashed border-gray-300'></div>
+                                    </div>
 
-                                        {/* Patient Info */}
-                                        <div className='flex items-center gap-3 mb-4 pb-4 border-b border-gray-200'>
-                                            <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
-                                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                                </svg>
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className='text-gray-900 font-bold text-lg md:text-xl leading-tight'>{appointmentData.patientName}</p>
-                                                <p className='font-mono text-gray-500 text-xs md:text-sm mt-1'>ID: {appointmentData.id}</p>
+                                    {/* Bottom Info Section */}
+                                    <div className='px-5 sm:px-6 md:px-8 pb-6 sm:pb-8 md:pb-10'>
+                                        <div className='bg-white rounded-xl p-5 sm:p-6 md:p-8 border border-gray-200'>
+                                            <div className='flex flex-col lg:flex-row gap-6 lg:gap-8 lg:items-start'>
+                                                {/* QR Section */}
+                                                <div className='w-full lg:w-auto flex flex-col items-center gap-3 lg:border-r lg:border-dashed lg:border-gray-300 lg:pr-8'>
+                                                    <div className='p-3 bg-white rounded-xl border border-gray-200'>
+                                                        <QRCode value={appointmentData.qrData} size={120} level="H" />
+                                                    </div>
+                                                    <p className='text-xs font-semibold text-gray-500 uppercase tracking-wide'>Scan to Check-in</p>
+                                                </div>
+
+                                                {/* Cost Section */}
+                                                <div className='flex-1 w-full space-y-4'>
+                                                    <h5 className='text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4'>Payment Summary</h5>
+                                                    <div className='space-y-3'>
+                                                        <div className='flex justify-between items-center text-sm sm:text-base'>
+                                                            <span className='text-gray-600'>Professional Fee</span>
+                                                            <span className='text-gray-900 font-semibold'>{currencySymbol}{appointmentData.costBreakdown?.consultationFee || appointmentData.price}</span>
+                                                        </div>
+                                                        {appointmentData.costBreakdown?.platformFee > 0 && (
+                                                            <div className='flex justify-between items-center text-sm sm:text-base'>
+                                                                <span className='text-gray-600'>Service Charge</span>
+                                                                <span className='text-gray-900 font-semibold'>{currencySymbol}{appointmentData.costBreakdown.platformFee}</span>
+                                                            </div>
+                                                        )}
+                                                        <div className='pt-3 mt-2 border-t border-gray-200 flex justify-between items-center'>
+                                                            <span className='text-gray-900 font-bold text-base sm:text-lg'>Total Paid</span>
+                                                            <span className='text-xl sm:text-2xl font-bold text-blue-600'>{currencySymbol}{appointmentData.price}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
+                                    </div>
+                                </div>
 
-                                        {/* Details Grid - Compact 4 columns */}
-                                        <div className='grid grid-cols-2 md:grid-cols-4 gap-4 mb-6'>
-                                                    <div className="bg-gray-50 rounded-lg p-3 md:p-4 border border-gray-200 hover:shadow-md transition-shadow">
-                                                        <div className="flex items-center gap-2 mb-2">
-                                                            <div className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                                                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                                                </svg>
-                                                            </div>
-                                                            <p className='text-[10px] md:text-xs text-gray-500 uppercase font-semibold tracking-wide'>Doctor</p>
-                                                        </div>
-                                                        <p className='font-bold text-gray-900 text-sm md:text-base leading-tight'>{appointmentData.doctorName}</p>
-                                                    </div>
-
-                                                    <div className="bg-gray-50 rounded-lg p-3 md:p-4 border border-gray-200 hover:shadow-md transition-shadow">
-                                                        <div className="flex items-center gap-2 mb-2">
-                                                            <div className="w-6 h-6 bg-cyan-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                                                <svg className="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                                                                </svg>
-                                                            </div>
-                                                            <p className='text-[10px] md:text-xs text-gray-500 uppercase font-semibold tracking-wide'>Specialty</p>
-                                                        </div>
-                                                        <p className='font-bold text-cyan-600 text-sm md:text-base leading-tight'>{appointmentData.doctorSpecialty}</p>
-                                                    </div>
-
-                                                    <div className="bg-gray-50 rounded-lg p-3 md:p-4 border border-gray-200 hover:shadow-md transition-shadow">
-                                                        <div className="flex items-center gap-2 mb-2">
-                                                            <div className="w-6 h-6 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                                                <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                                </svg>
-                                                            </div>
-                                                            <p className='text-[10px] md:text-xs text-gray-500 uppercase font-semibold tracking-wide'>Date</p>
-                                                        </div>
-                                                        <p className='font-bold text-gray-900 text-sm md:text-base leading-tight'>{appointmentData.date}</p>
-                                                    </div>
-
-                                                    <div className="bg-gray-50 rounded-lg p-3 md:p-4 border border-gray-200 hover:shadow-md transition-shadow">
-                                                        <div className="flex items-center gap-2 mb-2">
-                                                            <div className="w-6 h-6 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                                                <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                                </svg>
-                                                            </div>
-                                                            <p className='text-[10px] md:text-xs text-gray-500 uppercase font-semibold tracking-wide'>Time</p>
-                                                        </div>
-                                                        <p className='font-bold text-gray-900 text-sm md:text-base leading-tight'>{appointmentData.time}</p>
-                                                    </div>
-                                                </div>
-
-                                                {/* Cost & QR Section - Side by side */}
-                                                <div className='flex flex-col md:flex-row gap-4 p-4 md:p-5 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-gray-200'>
-                                                    {/* Cost Breakdown */}
-                                                    <div className='flex-1 bg-white rounded-lg p-4 border border-gray-200'>
-                                                        <div className="flex items-center gap-2 mb-3">
-                                                            <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center shadow-md">
-                                                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                                </svg>
-                                                            </div>
-                                                            <p className='text-sm font-bold text-gray-700'>Cost Breakdown</p>
-                                                        </div>
-                                                        <div className='space-y-2'>
-                                                            <div className='flex justify-between items-center text-sm'>
-                                                                <span className='text-gray-600'>Consultation:</span>
-                                                                <span className='font-semibold text-gray-800'>{currencySymbol}{appointmentData.costBreakdown?.consultationFee || (appointmentData.price || 0)}</span>
-                                                            </div>
-                                                            {appointmentData.costBreakdown?.platformFee > 0 && (
-                                                                <div className='flex justify-between items-center text-sm'>
-                                                                    <span className='text-gray-600'>Platform:</span>
-                                                                    <span className='font-semibold text-gray-800'>{currencySymbol}{appointmentData.costBreakdown.platformFee}</span>
-                                                                </div>
-                                                            )}
-                                                            {appointmentData.costBreakdown?.gst > 0 && (
-                                                                <div className='flex justify-between items-center text-sm'>
-                                                                    <span className='text-gray-600'>GST:</span>
-                                                                    <span className='font-semibold text-gray-800'>{currencySymbol}{appointmentData.costBreakdown.gst}</span>
-                                                                </div>
-                                                            )}
-                                                            <div className='border-t border-gray-300 pt-2 mt-2'>
-                                                                <div className='flex justify-between items-center text-base font-bold'>
-                                                                    <span className='text-gray-700'>Total:</span>
-                                                                    <span className='text-green-700'>{currencySymbol}{appointmentData.price}</span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* QR Code */}
-                                                    <div className='flex items-center justify-center md:border-l md:border-gray-200 md:pl-4'>
-                                                        <div className='text-center'>
-                                                            <div className='p-3 bg-white border border-gray-300 rounded-lg shadow-md inline-block'>
-                                                                <QRCode value={appointmentData.qrData} size={120} level="H" />
-                                                            </div>
-                                                            <p className='text-xs text-gray-500 font-medium mt-2'>Scan QR Code</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Bottom Buttons */}
-                                                <div className='flex gap-3 pt-4 border-t border-gray-200'>
-                                            <button
-                                                onClick={() => { setShowTicket(false); navigate('/my-appointments') }}
-                                                className="flex-1 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-semibold rounded-lg text-sm md:text-base transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center gap-2"
-                                            >
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                                </svg>
-                                                View Appointments
-                                            </button>
-                                            <button
-                                                onClick={() => setShowTicket(false)}
-                                                className="flex-1 py-3 bg-white border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 text-gray-700 font-semibold rounded-lg text-sm md:text-base transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2"
-                                            >
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                </svg>
-                                                Close
-                                            </button>
-                                                </div>
+                                {/* Fixed Footer: Actions */}
+                                <div className='p-5 sm:p-6 md:px-8 border-t border-gray-200 bg-gray-50 flex-shrink-0'>
+                                    <div className='flex flex-col sm:flex-row gap-3 sm:gap-4'>
+                                        <button
+                                            onClick={() => { setShowTicket(false); navigate('/my-appointments') }}
+                                            className="flex-[2] h-12 sm:h-14 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm sm:text-base transition-colors flex items-center justify-center gap-2"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                            </svg>
+                                            View Appointments
+                                        </button>
+                                        <button
+                                            onClick={() => setShowTicket(false)}
+                                            className="flex-1 h-12 sm:h-14 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold rounded-xl text-sm sm:text-base transition-colors flex items-center justify-center gap-2"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                            Close
+                                        </button>
                                     </div>
                                 </div>
                             </motion.div>
@@ -1457,4 +1422,3 @@ const Appointment = () => {
 }
 
 export default Appointment
-

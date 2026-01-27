@@ -70,7 +70,7 @@ const Footer = () => {
       </div>
 
       {/* Upward ^ Shape with Shield Logo in the Middle */}
-      <div className='relative -mt-24 mb-0'>
+      <div className='relative -mt-24 mb-0 pointer-events-none'>
         {/* Upward pointing ^ shape - connects to shield */}
         <svg viewBox="0 0 1440 120" className="w-full" preserveAspectRatio="none" style={{ height: '120px' }}>
           {/* ^ shape pointing upward - connects to shield bottom */}
@@ -81,7 +81,7 @@ const Footer = () => {
         </svg>
 
         {/* Shield Logo - Positioned at the peak of ^ shape, centered between the two sections */}
-        <div className='absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20'>
+        <div className='absolute left-1/2 top-[58%] -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-auto'>
           <div className='relative'>
             {/* Shield SVG */}
             <svg width="200" height="220" viewBox="0 0 220 240" className="drop-shadow-2xl">

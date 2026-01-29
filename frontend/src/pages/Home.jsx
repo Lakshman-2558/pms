@@ -5,6 +5,7 @@ import TopDoctors from '../components/TopDoctors'
 import HospitalTieUps from '../components/HospitalTieUps'
 import ContactLocation from '../components/ContactLocation'
 import AIChatbot from '../components/AIChatbot'
+import IconShowcase from '../components/IconShowcase'
 
 const Home = () => {
   const [showChatbot, setShowChatbot] = useState(false)
@@ -13,6 +14,7 @@ const Home = () => {
     <div>
       <Header />
       <SpecialityMenu />
+      <IconShowcase />
       <TopDoctors />
       <HospitalTieUps />
       <ContactLocation />

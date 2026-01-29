@@ -1405,6 +1405,13 @@ const initPayUPayment = async (req, res) => {
             return res.json({ success: false, message: 'Appointment ID and amount are required' })
         }
 
+        // Validate and format amount (PayU requires string with 2 decimals)
+        const amountNum = parseFloat(amount)
+        if (isNaN(amountNum) || amountNum <= 0) {
+            return res.json({ success: false, message: 'Invalid amount. Amount must be greater than 0' })
+        }
+        const formattedAmount = amountNum.toFixed(2)
+
         // Verify appointment belongs to user
         // Handle both MongoDB ObjectId and custom ID format
         let appointment = null
@@ -1438,8 +1445,16 @@ const initPayUPayment = async (req, res) => {
         const udf4 = ''
         const udf5 = ''
         
-        // Build hash string exactly as PayU requires
-        const hashString = `${PAYU_KEY}|${txnid}|${amount}|${productinfo || 'Appointment Payment'}|${firstname || 'Patient'}|${email || 'test@example.com'}|${udf1}|${udf2}|${udf3}|${udf4}|${udf5}||||||${PAYU_SALT}`
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        const validEmail = email && emailRegex.test(email) ? email : 'test@example.com'
+        
+        // Validate phone (should be 10 digits)
+        const cleanPhone = phone ? phone.replace(/\D/g, '').slice(0, 10) : '9999999999'
+        const validPhone = cleanPhone.length === 10 ? cleanPhone : '9999999999'
+        
+        // Build hash string exactly as PayU requires (use formatted amount)
+        const hashString = `${PAYU_KEY}|${txnid}|${formattedAmount}|${productinfo || 'Appointment Payment'}|${firstname || 'Patient'}|${validEmail}|${udf1}|${udf2}|${udf3}|${udf4}|${udf5}||||||${PAYU_SALT}`
         
         // Generate hash (using crypto)
         const hash = crypto.createHash('sha512').update(hashString).digest('hex')
@@ -1447,20 +1462,20 @@ const initPayUPayment = async (req, res) => {
         // Determine PayU URL based on environment
         const payuUrl = PAYU_ENV === '0' ? 'https://test.payu.in/_payment' : 'https://secure.payu.in/_payment'
 
-        // Build payment data object
+        // Build payment data object (PayU requires amount as string with 2 decimals)
         const paymentData = {
             key: PAYU_KEY,
             txnid: txnid,
-            amount: amount,
-            productinfo: productinfo || 'Appointment Payment',
-            firstname: firstname || 'Patient',
-            email: email || 'test@example.com',
-            phone: phone || '9999999999',
-            surl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/payment?status=success&txnid=${txnid}&appointmentId=${appointmentId}`,
-            furl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/payment?status=failed&txnid=${txnid}&appointmentId=${appointmentId}`,
+            amount: formattedAmount, // String with 2 decimals
+            productinfo: (productinfo || 'Appointment Payment').substring(0, 100), // Max 100 chars
+            firstname: (firstname || 'Patient').substring(0, 60), // Max 60 chars
+            email: validEmail,
+            phone: validPhone,
+            surl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/my-appointments?status=success&txnid=${txnid}&appointmentId=${appointmentId}`,
+            furl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/my-appointments?status=failed&txnid=${txnid}&appointmentId=${appointmentId}`,
             service_provider: 'payu_paisa',
             hash: hash,
-            udf1: appointmentId,
+            udf1: appointmentId.toString().substring(0, 255),
             udf2: 'appointment_booking',
             payuUrl: payuUrl
         }
@@ -1617,7 +1632,7 @@ const getMerchantUPI = async (req, res) => {
     try {
         // Merchant UPI ID - Hardcoded for PayU testing
         // Use this UPI ID with Direct Scanner option for UPI mode testing
-        const merchantUPI = '9676599738@axl'
+        const merchantUPI = '9030932120@ibl'
 
         console.log('Merchant UPI ID requested. Using hardcoded value:', merchantUPI)
 

@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AppContext } from '../context/AppContext'
 import axios from 'axios'
 import { toast } from 'react-toastify'
@@ -15,8 +15,10 @@ const MyAppointments = () => {
 
     const { backendUrl, token } = useContext(AppContext)
     const navigate = useNavigate()
+    const [searchParams, setSearchParams] = useSearchParams()
 
     const [appointments, setAppointments] = useState([])
+    const [payOnlineLoadingId, setPayOnlineLoadingId] = useState(null)
     const [isLoading, setIsLoading] = useState(true)
     const [cancellingId, setCancellingId] = useState(null)
     const [downloadingOPForm, setDownloadingOPForm] = useState(null) // Track which OP form is being downloaded (appointment ID)
@@ -85,6 +87,65 @@ Thank you for choosing MediChain Healthcare!
         document.body.removeChild(a)
         URL.revokeObjectURL(url)
         toast.success('Receipt downloaded successfully')
+    }
+
+    // Redirect directly to PayU payment gateway
+    const handlePayOnline = async (item) => {
+        if (!item || !item._id) {
+            toast.error('Invalid appointment data')
+            return
+        }
+        const amount = parseFloat(item.amount || item.costBreakdown?.total || 0)
+        if (!amount || amount <= 0 || isNaN(amount)) {
+            toast.error('Invalid payment amount. Please contact support.')
+            return
+        }
+        if (!token) {
+            toast.error('Please login to make payment')
+            navigate('/login')
+            return
+        }
+        setPayOnlineLoadingId(item._id)
+        try {
+            const { data } = await axios.post(
+                backendUrl + '/api/user/payment-payu/init',
+                {
+                    appointmentId: item._id.toString(),
+                    amount,
+                    productinfo: 'Appointment Payment',
+                    firstname: item.userData?.name || item.actualPatient?.name || 'Patient',
+                    email: item.userData?.email || '',
+                    phone: item.userData?.phone || item.actualPatient?.phone || ''
+                    // Don't specify pg parameter - let PayU show all payment options including UPI QR
+                },
+                { headers: { token } }
+            )
+            if (!data?.success || !data?.paymentData?.payuUrl) {
+                toast.error(data?.message || 'Failed to initialize payment')
+                setPayOnlineLoadingId(null)
+                return
+            }
+            const payuForm = document.createElement('form')
+            payuForm.method = 'POST'
+            payuForm.action = data.paymentData.payuUrl
+            payuForm.style.display = 'none'
+            Object.keys(data.paymentData).forEach(key => {
+                if (key !== 'payuUrl' && data.paymentData[key] != null) {
+                    const input = document.createElement('input')
+                    input.type = 'hidden'
+                    input.name = key
+                    input.value = String(data.paymentData[key])
+                    payuForm.appendChild(input)
+                }
+            })
+            document.body.appendChild(payuForm)
+            toast.info('Redirecting to payment gateway...', { autoClose: 2000 })
+            setTimeout(() => payuForm.submit(), 500)
+        } catch (err) {
+            console.error('PayU init error:', err)
+            toast.error(err?.response?.data?.message || 'Failed to redirect to payment. Please try again.')
+            setPayOnlineLoadingId(null)
+        }
     }
 
     // Download OP Form (Out Patient Form) - PDF Format
@@ -799,6 +860,39 @@ Thank you for choosing MediChain Healthcare!
         }
     }, [token])
 
+    // Handle return from PayU (success/failure redirect to /my-appointments)
+    useEffect(() => {
+        const status = searchParams.get('status')
+        const txnid = searchParams.get('txnid')
+        const appointmentId = searchParams.get('appointmentId')
+        if (!status || !token) return
+        const run = async () => {
+            if (status === 'success' && appointmentId) {
+                try {
+                    const { data } = await axios.post(
+                        backendUrl + '/api/user/payment-payu/verify',
+                        { appointmentId, txnid: txnid || '', status: 'success' },
+                        { headers: { token } }
+                    )
+                    if (data?.success) {
+                        toast.success('Payment successful! Your appointment is confirmed.')
+                        getUserAppointments()
+                    } else {
+                        toast.info(data?.message || 'Payment received. Refreshing...')
+                        getUserAppointments()
+                    }
+                } catch (e) {
+                    toast.info('Payment may have been received. Refreshing appointments...')
+                    getUserAppointments()
+                }
+            } else if (status === 'failed') {
+                toast.error('Payment was not completed. You can try again from My Appointments.')
+            }
+            setSearchParams({})
+        }
+        run()
+    }, [searchParams, token])
+
     // Get status badge
     const getStatusBadge = (item) => {
         if (item.isCompleted) {
@@ -1126,18 +1220,23 @@ Thank you for choosing MediChain Healthcare!
                                     {!item.cancelled && !isPaid && !item.isCompleted && (
                                         <>
                                             <button 
-                                                onClick={() => navigate('/payment', { 
-                                                    state: { 
-                                                        appointmentId: item._id,
-                                                        appointmentData: item
-                                                    } 
-                                                })} 
+                                                onClick={() => handlePayOnline(item)}
+                                                disabled={payOnlineLoadingId === item._id}
                                                 className="btn btn-primary flex-1"
                                             >
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                                                </svg>
-                                                {item.paymentMethod === 'payOnVisit' || item.paymentMethod === 'Pay on Visit' ? 'Pay Now' : 'Pay Online'}
+                                                {payOnlineLoadingId === item._id ? (
+                                                    <>
+                                                        <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                                                        Redirecting...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                                        </svg>
+                                                        {item.paymentMethod === 'payOnVisit' || item.paymentMethod === 'Pay on Visit' ? 'Pay Now' : 'Pay Online'}
+                                                    </>
+                                                )}
                                             </button>
                                             <button 
                                                 onClick={() => handleDownloadOPForm(item)}

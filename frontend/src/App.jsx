@@ -26,8 +26,6 @@ import CollaboratedHospitals from './pages/CollaboratedHospitals'
 import ForgotPassword from './pages/ForgotPassword'
 import HospitalDetails from './pages/HospitalDetails'
 import AllDoctorsList from './pages/AllDoctorsList'
-import PaymentPage from './pages/PaymentPage'
-
 const App = () => {
   return (
     <div className='min-h-screen flex flex-col overflow-x-hidden'>
@@ -65,7 +63,6 @@ const App = () => {
           <Route path='/about' element={<About />} />
           <Route path='/contact' element={<Contact />} />
           <Route path='/appointment/:docId' element={<Appointment />} />
-          <Route path='/payment' element={<PaymentPage />} />
           <Route path='/my-appointments' element={<MyAppointments />} />
           <Route path='/my-profile' element={<MyProfile />} />
           <Route path='/privacy-policy' element={<PrivacyPolicy />} />

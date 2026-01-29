@@ -542,29 +542,52 @@ const Appointment = () => {
                     // Refresh doctor data
                     getDoctosData()
                 } else if (paymentMethod === 'onlinePayment') {
-                    // Online Payment - Redirect to payment page
+                    // Online Payment - Redirect directly to PayU
                     const appointmentId = data.appointmentId || data._id
-                    if (appointmentId) {
-                        // Store appointment data in sessionStorage for payment page
-                        // Make sure to include the MongoDB ObjectId, not the custom ID
-                        const paymentData = {
-                            ...ticketData,
-                            appointmentId: appointmentId, // MongoDB ObjectId
-                            _id: appointmentId, // Also store as _id for compatibility
-                            // Remove or override the custom 'id' field to avoid confusion
+                    if (!appointmentId) {
+                        toast.error('Appointment ID not found. Please try again.')
+                        setIsBooking(false)
+                        return
+                    }
+                    try {
+                        const amount = costBreakdown.total || docInfo?.fees || 0
+                        const { data: payuData } = await axios.post(
+                            backendUrl + '/api/user/payment-payu/init',
+                            {
+                                appointmentId: appointmentId.toString(),
+                                amount: parseFloat(amount),
+                                productinfo: 'Appointment Payment',
+                                firstname: displayPatientName || userData?.name || 'Patient',
+                                email: userData?.email || '',
+                                phone: userData?.phone || ''
+                                // Don't specify pg parameter - let PayU show all payment options including UPI QR
+                            },
+                            { headers: { token } }
+                        )
+                        if (!payuData?.success || !payuData?.paymentData?.payuUrl) {
+                            toast.error(payuData?.message || 'Failed to initialize payment')
+                            setIsBooking(false)
+                            return
                         }
-                        // Keep the custom id for display purposes but prioritize appointmentId
-                        sessionStorage.setItem('paymentAppointmentData', JSON.stringify(paymentData))
-
-                        // Redirect to payment page
-                        navigate('/payment', {
-                            state: {
-                                appointmentData: paymentData,
-                                appointmentId: appointmentId // Explicitly pass MongoDB ObjectId
+                        const payuForm = document.createElement('form')
+                        payuForm.method = 'POST'
+                        payuForm.action = payuData.paymentData.payuUrl
+                        payuForm.style.display = 'none'
+                        Object.keys(payuData.paymentData).forEach(key => {
+                            if (key !== 'payuUrl' && payuData.paymentData[key] != null) {
+                                const input = document.createElement('input')
+                                input.type = 'hidden'
+                                input.name = key
+                                input.value = String(payuData.paymentData[key])
+                                payuForm.appendChild(input)
                             }
                         })
-                    } else {
-                        toast.error('Appointment ID not found. Please try again.')
+                        document.body.appendChild(payuForm)
+                        toast.info('Redirecting to payment gateway...', { autoClose: 2000 })
+                        setTimeout(() => payuForm.submit(), 500)
+                    } catch (err) {
+                        console.error('PayU init error:', err)
+                        toast.error(err?.response?.data?.message || 'Failed to redirect to payment. Please try again.')
                         setIsBooking(false)
                     }
                 }
